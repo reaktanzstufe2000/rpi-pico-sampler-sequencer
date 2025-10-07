@@ -63,36 +63,43 @@ void Sequencer::setupSequence() {
 
 
 // void Sequencer::poll() {
-//   unsigned long now = millis();
-//   if (now - lastStepTime >= STEP_INTERVAL) {
+//   unsigned long now = micros();
+
+//   // Handle STOP and PAUSE states
+//   if (state == SEQ_STOP) {
+//     currentStep = 0;
+//     return;
+//   }
+//   if (state == SEQ_PAUSE) {
+//     return;
+//   }
+
+//   // Only proceed if we're in START mode
+//   int tempo = params[PARAM_TEMPO].value;  // BPM from GUI
+//   int swing = params[PARAM_SWING].value;  // 0–100 from GUI
+
+//   unsigned long step_interval_us = 60000000 / tempo / PPQN;  // microseconds per step
+
+//   bool isSwingStep = (currentStep % 2 == 1);                         // every second step is swing step
+//   unsigned long swing_offset_us = (step_interval_us * swing) / 100;  // Apply swing offset to base interval
+//   unsigned long interval = isSwingStep
+//                              ? step_interval_us + swing_offset_us
+//                              : step_interval_us - swing_offset_us;
+
+//   if (now >= nextStepTime) {
 //     for (int i = 0; i < INSTRUMENTS; i++) {
 //       Step s = sequence[i][currentStep];
 //       if (s.velocity > 0) {
 //         midiOut.enqueue(s.note, s.velocity, MIDI_CHANNEL);
 //       }
 //     }
+
 //     currentStep = (currentStep + 1) % STEPS;
-//     lastStepTime = now;
+//     nextStepTime += interval;
 //   }
+
 // }
-void Sequencer::poll() {
-  unsigned long now = micros();
 
-  bool isSwingStep = (currentStep % 2 == 1);
-  float swingOffset = isSwingStep ? SWING_AMOUNT : -SWING_AMOUNT;
-  unsigned long interval = STEP_INTERVAL_US + (STEP_INTERVAL_US * swingOffset);
-
-  if (now - lastStepTime >= interval) {
-    for (int i = 0; i < INSTRUMENTS; i++) {
-      Step s = sequence[i][currentStep];
-      if (s.velocity > 0) {
-        midiOut.enqueue(s.note, s.velocity, MIDI_CHANNEL);
-      }
-    }
-    currentStep = (currentStep + 1) % STEPS;
-    lastStepTime = now;
-  }
-}
 
 
 void Sequencer::processQueue() {
@@ -116,5 +123,53 @@ void Sequencer::processQueue() {
         break;
         // Add more mappings as needed
     }
+  }
+}
+
+
+void Sequencer::poll(SequencerState state) {
+  unsigned long now = micros();
+
+  // Handle sequencer state
+  switch (state) {
+    case SEQ_STOP:
+      currentStep = 0;
+      return;
+
+    case SEQ_PAUSE:
+      return;
+
+    case SEQ_START:
+      nextStepTime = now;  // reset timeline on start
+      break;
+  }
+
+  // Get tempo and swing parameters
+  int tempo = params[PARAM_TEMPO].value;  // BPM from GUI
+  int swing = params[PARAM_SWING].value;  // 0–100 from GUI
+
+  // Calculate base step interval in microseconds
+  unsigned long step_interval_us = 60000000 / tempo / PPQN;
+
+  // Determine if current step is a swing step
+  bool isSwingStep = (currentStep % 2 == 1);
+
+  // Apply swing offset
+  unsigned long swing_offset_us = (step_interval_us * swing) / 100;
+  unsigned long interval = isSwingStep // if this one is a swing step, the next on will be closer
+                             ? step_interval_us - swing_offset_us
+                             : step_interval_us + swing_offset_us;
+
+  // Trigger step if scheduled time has arrived
+  if (now >= nextStepTime) {
+    for (int i = 0; i < INSTRUMENTS; i++) {
+      Step s = sequence[i][currentStep];
+      if (s.velocity > 0) {
+        midiOut.enqueue(s.note, s.velocity, MIDI_CHANNEL);
+      }
+    }
+
+    currentStep = (currentStep + 1) % STEPS;
+    nextStepTime += interval;
   }
 }

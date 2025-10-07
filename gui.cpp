@@ -2,8 +2,9 @@
 
 int originalValue = 0;
 
-// === GUI State ===
 Parameter params[N_PARAM] = {
+  { "Tempo", 120, 40, 300 },
+  { "Swing", 33, 0, 100 },
   { "Resample", 256, 1, 2048 },
   { "Pitch Shift", 256, 1, 2048 },
   { "Filter Poles", 4, 0, 4 },

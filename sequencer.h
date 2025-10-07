@@ -3,21 +3,20 @@
 
 #include <Arduino.h>
 #include "sampler.h"
+#include "gui.h"
 
 extern SampleVoice kickVoice;
 extern SampleVoice snareVoice;
 extern SampleVoice chVoice;   // Closed Hi-hat
 extern SampleVoice ohVoice;   // Open Hi-hat
 extern SampleVoice tomVoice;  // Mid Tom
+extern Parameter params[N_PARAM];
 
 // Constants
 const int BPM = 120;
 const int STEPS = 32;
 const int INSTRUMENTS = 5;
 const int PPQN = 4;
-const unsigned long STEP_INTERVAL_US = 60000000 / BPM / PPQN;  // microseconds
-
-#define SWING_AMOUNT 0.3f          // 0.0 = straight, 0.5 = max swing
 
 const byte MIDI_CHANNEL = 1;
 
@@ -52,12 +51,13 @@ public:
 class Sequencer {
 public:
   Step sequence[INSTRUMENTS][STEPS];
-  unsigned long lastStepTime = 0;
+  SequencerState state = SEQ_STOP;
+  unsigned long nextStepTime = 0;
   int currentStep = 0;
   MidiQueue midiOut;
 
   void setupSequence();
-  void poll();
+  void poll(SequencerState state);
   void processQueue();
 };
 

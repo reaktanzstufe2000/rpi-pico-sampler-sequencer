@@ -1,3 +1,26 @@
+/*
+ * This rpi-pico-sampler provides you with nice 909 beats!
+ * Copyright (C) 2025 reaktanzstufe2000
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+ * SOFTWARE.
+*/
+
 #include <Arduino.h>
 #include <PicoLCD_I2C.h>
 #include <I2S.h>
@@ -10,8 +33,6 @@
 
 
 // === Constants ===
-#define MAX_BUFFER_SIZE 2048
-#define FIXED_SHIFT 8  // Q8.8 format
 #define LED_PIN LED_BUILTIN
 
 // === Globals ===
@@ -89,24 +110,30 @@ void loop1() {
   int16_t sample;
   int16_t stereoFrame[2];
 
+  int flonkus = 1;
 
   while (true) {
     // poll the sequencer
-    seq.poll();
+    if (flonkus) {
+      seq.poll(SEQ_START);
+      flonkus = 0;
+    } else {
+      seq.poll(SEQ_PLAYING);
+    }
     seq.processQueue();
 
     // Apply resampling (pitch + speed)
-    sample = (kickVoice.render(256) >> 2) + (snareVoice.render(256) >> 2) + (chVoice.render(256) >> 2) + (ohVoice.render(256) >> 2) + (tomVoice.render(params[0].value) >> 2);
+    sample = (kickVoice.render(256) >> 2) + (snareVoice.render(256) >> 2) + (chVoice.render(256) >> 2) + (ohVoice.render(256) >> 2) + (tomVoice.render(params[PARAM_RESAMPLE].value) >> 2);
     sample = sample >> 1;
 
     // Apply pitch shifting (pitch only)
-    sample = pitchShift(sample, params[1].value, MAX_BUFFER_SIZE / 2);
+    sample = pitchShift(sample, params[PARAM_PITCH_SHIFT].value, MAX_BUFFER_SIZE / 2);
 
     // Apply low pass filter
-    sample = lowPassFilterMultiPole(sample, params[3].value, params[2].value, params[4].value);  // 64=~880 Hz
+    sample = lowPassFilterMultiPole(sample, params[PARAM_CUTOFF].value, params[PARAM_FILTER_POLES].value, params[PARAM_RESONANCE].value);  // 64=~880 Hz
 
     // Apply overdrive
-    //sample = overdrive(sample, params[5].value, params[6].value);
+    //sample = overdrive(sample, params[PARAM_GAIN].value, params[PARAM_DRIVE].value);
 
     // Scale down volume and prepare stereo frame
     stereoFrame[0] = sample / 2;
