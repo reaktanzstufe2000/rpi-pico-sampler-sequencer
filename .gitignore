@@ -1,0 +1,26 @@
+# Arduino build files
+*.hex
+*.elf
+*.bin
+*.eep
+*.map
+*.sym
+*.lst
+
+# Arduino IDE folders
+*.ino.cpp
+*.d
+*.o
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Backup and temp files
+*~
+*.bak
+*.swp
+
+# VS Code or other editor folders (if used)
+.vscode/
+.idea/
