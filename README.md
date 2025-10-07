@@ -33,19 +33,10 @@ I am providing this lovely project here for free so there are no guarantees or w
 
 The PCM5102 DAC has this XSMT pin that either needs to be pulled high by connecting it to 3.3V or soldring the correct solderbridge.
 
-## Getting Started
+## Libs used
 
-1. Wire up the components as shown in the table above.  
-2. Flash the firmware to your Raspberry Pi Pico.  
-3. Upload your samples to the device.  
-4. Power it up and start sequencing.
-
-## Dependencies
-
-- Raspberry Pi Pico SDK or Arduino core  
-- I2C LCD library (e.g., LiquidCrystal_I2C)  
-- Rotary encoder library  
-- I2S audio support (e.g., PicoAudio or custom I2S driver)
+- Raspberry Pi Pico Arduino core by Earl E. Philhower
+- PicoLCD_I2C by smlaage
 
 ## License
 
